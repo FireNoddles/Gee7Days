@@ -8,10 +8,10 @@ import (
 
 func main()  {
 	engine := gee.New()
-	engine.Get("/", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprint(w, "URL.Path=%q\n", req.URL.Path)
+	engine.Get("/", func(c *gee.Context) {
+		c.String()
 	})
-	engine.Get("/hello", func(w http.ResponseWriter, req *http.Request) {
+	engine.Get("/hello", func(c *gee.Context) {
 		for k,v := range req.Header{
 			fmt.Fprint(w, "k,v", k, v)
 		}

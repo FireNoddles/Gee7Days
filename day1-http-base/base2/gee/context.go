@@ -1,6 +1,8 @@
 package gee
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -39,4 +41,30 @@ func (c *Context) SetStatus(code int) {
 
 func (c *Context) SetHeader(key string, value string) {
 	c.W.Header().Set(key, value)
+}
+
+func (c *Context) String(code int, format string, values...interface{}){
+	c.SetHeader("content-type", "text/plain")
+	c.SetStatus(code)
+	c.W.Write([]byte(fmt.Sprintf(format, values...)))
+}
+
+func (c *Context) Json(code int, obj interface{}){
+	c.SetHeader("content-type", "application/json")
+	c.SetStatus(code)
+	encoder:=json.NewEncoder(c.W)
+	if err:=encoder.Encode(obj);err!=nil{
+		return
+	}
+}
+
+func (c *Context) Data(code int, data []byte){
+	c.SetStatus(code)
+	c.W.Write(data)
+}
+
+func (c *Context) Html(code int, html string){
+	c.SetHeader("content-type", "application/html")
+	c.SetStatus(code)
+	c.W.Write([]byte(html))
 }
