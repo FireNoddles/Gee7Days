@@ -1,7 +1,7 @@
 package gee
 
 type node struct {
-	pattern  string  //叶子节点的完整路径？
+	pattern  string  //叶子节点的完整路径(完整一条路径）
 	part     string  //当前节点
 	children []*node //当前节点的子节点
 	isWild   bool    //是否动态节点
@@ -59,5 +59,14 @@ func (n *node) search(parts []string, height int) *node {
 		}
 		return n
 	}
+	part := parts[height]
+	children := n.matchChildren(part)
 
+	for _, child := range children {
+		result := child.search(parts, height+1)
+		if result != nil {
+			return result
+		}
+	}
+	return nil
 }

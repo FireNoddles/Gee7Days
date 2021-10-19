@@ -14,6 +14,16 @@ type Context struct {
 	Code   int
 	Path   string
 	Method string
+	Params map[string]string
+}
+
+func (c *Context) Param(key string) string {
+	value, ok := c.Params[key]
+	if ok {
+		return value
+	} else {
+		return ""
+	}
 }
 
 func NewContext(w http.ResponseWriter, req *http.Request) *Context {
