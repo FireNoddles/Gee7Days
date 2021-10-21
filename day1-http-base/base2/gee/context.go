@@ -9,12 +9,14 @@ import (
 type H map[string]interface{}
 
 type Context struct {
-	W      http.ResponseWriter
-	Req    *http.Request
-	Code   int
-	Path   string
-	Method string
-	Params map[string]string
+	W        http.ResponseWriter
+	Req      *http.Request
+	Code     int
+	Path     string
+	Method   string
+	Params   map[string]string
+	index    int          //中间件计数
+	handlers []handleFunc //handler函数集合 中间件加本来要执行的handler
 }
 
 func (c *Context) Param(key string) string {
@@ -79,4 +81,11 @@ func (c *Context) Html(code int, html string) {
 	c.SetHeader("content-type", "application/html")
 	c.SetStatus(code)
 	c.W.Write([]byte(html))
+}
+
+func (c *Context) Next() {
+	c.index++ //记录执行到第几个中间件
+	for ; c.index < len(c.handlers); c.index++ {
+		c.handlers[c.index](c)
+	}
 }
