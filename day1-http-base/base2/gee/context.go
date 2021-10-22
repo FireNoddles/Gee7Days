@@ -17,6 +17,7 @@ type Context struct {
 	Params   map[string]string
 	index    int          //中间件计数
 	handlers []handleFunc //handler函数集合 中间件加本来要执行的handler
+	engine   *Engine
 }
 
 func (c *Context) Param(key string) string {
@@ -28,12 +29,21 @@ func (c *Context) Param(key string) string {
 	}
 }
 
+func (c *Context) HTML(code int, name string, data interface{}) {
+	c.SetHeader("Content-Type", "text/html")
+	c.SetStatus(code)
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.W, name, data); err != nil {
+
+	}
+}
+
 func NewContext(w http.ResponseWriter, req *http.Request) *Context {
 	return &Context{
 		W:      w,
 		Req:    req,
 		Path:   req.URL.Path,
 		Method: req.Method,
+		index:  -1,
 	}
 }
 

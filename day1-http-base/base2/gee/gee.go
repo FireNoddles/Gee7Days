@@ -1,7 +1,9 @@
 package gee
 
 import (
+	"html/template"
 	"net/http"
+	"path"
 	"strings"
 )
 
@@ -15,9 +17,19 @@ type RouterGroup struct {
 }
 
 type Engine struct {
-	*RouterGroup // engine拥有第一层分组 类似于 /hello 中的"/" ，继承了routergroup 可以访问routergroup下的方法
-	Router       *router
-	groups       []*RouterGroup //保存所有分组
+	*RouterGroup  // engine拥有第一层分组 类似于 /hello 中的"/" ，继承了routergroup 可以访问routergroup下的方法
+	Router        *router
+	groups        []*RouterGroup     //保存所有分组
+	htmlTemplates *template.Template //html渲染
+	funcMap       template.FuncMap   //html渲染
+}
+
+func (engine *Engine) SetFuncMap(funcMap template.FuncMap) {
+	engine.funcMap = funcMap
+}
+
+func (engine *Engine) LoadHTMLGlob(pattern string) {
+	engine.htmlTemplates = template.Must(template.New("").Funcs(engine.funcMap).ParseGlob(pattern))
 }
 
 func New() *Engine {
@@ -69,5 +81,25 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 	c := NewContext(w, req)
 	c.handlers = midlewares
+	c.engine = engine
 	engine.Router.handle(c)
+}
+
+func (g *RouterGroup) createStaticHandler(relativePath string, fs http.FileSystem) handleFunc {
+	abPath := path.Join(g.prefix, relativePath)
+	fileServer := http.StripPrefix(abPath, http.FileServer(fs))
+	return func(c *Context) {
+		file := c.Param("filepath")
+		if _, err := fs.Open(file); err != nil {
+			c.SetStatus(http.StatusNotFound)
+		}
+		fileServer.ServeHTTP(c.W, c.Req)
+	}
+}
+
+func (g *RouterGroup) Static(relativePath string, root string) {
+	handler := g.createStaticHandler(relativePath, http.Dir(root))
+	//映射文件的路径为relativePath/*filepath 这样文件都会到动态路由relativePath下去找
+	urlPattern := path.Join(relativePath, "/*filepath")
+	g.Get(urlPattern, handler)
 }
